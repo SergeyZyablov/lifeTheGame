@@ -16,27 +16,21 @@ public class Game {
 		this.field = configuration.getField();
 	}
 
+	public Game() {
+	}
+
 	public void start() {
 		cells = findLivingCells(field);
 		showGeneration();
-		while (!gameOver()) {
+		while (!gameOver(cells, steps)) {
 			step();
 			steps--;
 			step++;
 		}
-		fileWrite();
+		fileWrite(field, cells);
 	}
 
-	private boolean containsCell(int x, int y) {
-		for (Cell c : cells) {
-			if (c.getX() == x && c.getY() == y) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private boolean gameOver() {
+	public boolean gameOver(List<Cell> cells, int steps) {
 		if (cells.isEmpty() || steps == 0) {
 			return true;
 		}
@@ -46,15 +40,31 @@ public class Game {
 	private void step() {
 		List<Cell> newGeneration = new ArrayList<>();
 		for (Cell cell : cells) {
-			if (getNeighbors(cell) == 2 || getNeighbors(cell) == 3) {
+			if (Cell.getNeighbors(cell, field, cells) == 2 || Cell.getNeighbors(cell, field, cells) == 3) {
 				newGeneration.add(cell);
 			}
 			int x = cell.getX() - 1;
 			int y = cell.getY() - 1;
 			for (int i = 0; i < 3; i++) {
 				for (int j = 0; j < 3; j++) {
-					if (getNeighbors(new Cell(x, y)) == 3 && !containsCell(x, y)) {
-						newGeneration.add(new Cell(x, y));
+					int inversiveX = x;
+					int inversiveY = y;
+					if (x >= field.length) {
+						inversiveX = x - field.length;
+					}
+					if (y >= field.length) {
+						inversiveY = y - field.length;
+					}
+					if (x < 0) {
+						inversiveX = field.length - x - 2;
+					}
+					if (y < 0) {
+						inversiveY = field.length - y - 2;
+					}
+					if (Cell.getNeighbors(new Cell(inversiveX, inversiveY), field, cells) == 3
+							&& !Cell.containsCell(cells, inversiveX, inversiveY)
+							&& !Cell.containsCell(newGeneration, inversiveX, inversiveY)) {
+						newGeneration.add(new Cell(inversiveX, inversiveY));
 					}
 					x++;
 				}
@@ -68,34 +78,13 @@ public class Game {
 		showGeneration();
 	}
 
-	private int getNeighbors(Cell cell) {
-		int neighbors = 0;
-
-		int x = cell.getX() - 1;
-		int y = cell.getY() - 1;
-
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				if (x != cell.getX() || y != cell.getY()) {
-					if (containsCell(x, y)) {
-						neighbors++;
-					}
-				}
-				x++;
-			}
-			x = cell.getX() - 1;
-			y++;
-		}
-		return neighbors;
-	}
-
 	private void showGeneration() {
 		for (int i = 0; i < field.length; i++) {
 			for (int j = 0; j < field.length; j++) {
-				if (containsCell(j, i)) {
+				if (Cell.containsCell(cells, j, i)) {
 					System.out.print("o ");
 				} else {
-					System.out.print("x ");
+					System.out.print("  ");
 				}
 			}
 			System.out.println();
@@ -103,11 +92,11 @@ public class Game {
 		System.out.print(" ");
 	}
 
-	private boolean fileWrite() {
+	public boolean fileWrite(char[][] field, List<Cell> cells) {
 		try (FileWriter writer = new FileWriter("result.txt", false)) {
 			for (int i = 0; i < field.length; i++) {
 				for (int j = 0; j < field.length; j++) {
-					if (containsCell(j, i)) {
+					if (Cell.containsCell(cells, j, i)) {
 						writer.append("o ");
 					} else {
 						writer.append("x ");
@@ -123,7 +112,7 @@ public class Game {
 		return true;
 	}
 
-	private List<Cell> findLivingCells(char[][] field) {
+	public List<Cell> findLivingCells(char[][] field) {
 		List<Cell> cells = new ArrayList<>();
 		for (int i = 0; i < field.length; i++) {
 			for (int j = 0; j < field.length; j++) {

@@ -28,7 +28,6 @@ public class Configuration {
 	public static Configuration fileReader(String file) throws IOException {
 		Gson gson = new Gson();
 		Configuration configuration = gson.fromJson(new FileReader(file), Configuration.class);
-		System.out.println();
 		return configuration;
 	}
 
